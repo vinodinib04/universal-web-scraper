@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Universal Web Scraper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <h1 class="text-3xl font-bold mb-6">Universal Web Scraper</h1>
+
+    <div class="bg-white p-6 rounded shadow-md w-full max-w-xl">
+        <form id="scrape-form" class="space-y-4">
+            <input type="url" id="url-input" placeholder="Enter website/blog URL"
+                class="w-full p-3 border rounded" required />
+
+            <button type="submit"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Scrape</button>
+        </form>
+
+        <div id="loading" class="hidden mt-4 text-blue-500">Scraping in progress...</div>
+
+        <div id="result" class="mt-6"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('scrape-form');
+        const urlInput = document.getElementById('url-input');
+        const resultDiv = document.getElementById('result');
+        const loadingDiv = document.getElementById('loading');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            resultDiv.innerHTML = '';
+            loadingDiv.classList.remove('hidden');
+
+            const response = await fetch('http://localhost:8000/scrape', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: urlInput.value.trim() })
+            });
+
+            loadingDiv.classList.add('hidden');
+
+            if (response.ok) {
+                const data = await response.json();
+
+                const siteHeader = `<h2 class="text-xl font-semibold mb-4">Site: ${data.site}</h2>`;
+                const itemsHtml = data.items.map(item => `
+                    <div class="bg-gray-50 p-4 rounded mb-4">
+                        <h3 class="font-bold text-lg">${item.title}</h3>
+                        <p><strong>Type:</strong> ${item.content_type}</p>
+                        <a href="${item.source_url}" target="_blank" class="text-blue-500 underline">Source URL</a>
+                        <pre class="bg-gray-200 p-2 mt-2 overflow-x-auto">${item.content}</pre>
+                    </div>
+                `).join('');
+
+                resultDiv.innerHTML = siteHeader + itemsHtml;
+            } else {
+                resultDiv.innerHTML = '<p class="text-red-500">Failed to scrape the website.</p>';
+            }
+        });
+    </script>
+
+</body>
+
+</html>
